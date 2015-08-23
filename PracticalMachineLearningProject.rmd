@@ -1,5 +1,7 @@
 ---
-output: pdf_document
+output: 
+  pdf_document: 
+    keep_tex: yes
 ---
 **A General Boosting Regression Model (GMB) to Predict a Weightlifting Exercise**   
   
@@ -32,23 +34,23 @@ training <- pmlData[inTrain,]
 testing <-  pmlData[-inTrain,]
 c(dim(training), dim(testing))
 ```
-A denisty plot of the classe data factors are as follows:  
+A density plot of the classe data factors are as follows:  
 ```{r DensityPlot, warning=FALSE, message=FALSE}
 # Density plot of the classe factor variable
 qplot(classe, colour=classe, data=training, geom="density")
 ```
 
 **How the model was built.**   
-The Generalized Boosting Regression (gmb) Model Package in r's caret package was used to model the various sensor readings recorded in pmlData above.  The classe varirable is the resonse variable and all the other sensor data were explanatory variables.   
+The Generalized Boosting Regression (gmb) Model Package in r's caret package was used to model the various sensor readings recorded in pmlData above.  The classe variable is the response variable and all the other sensor data were explanatory variables.   
   
 **How cross validation was used.**  
 Repeated cross validation was used to model pmlData. Three folds and three repeats were used to model the training data.   
 
 **Expected out of sample error estimate.**  
-Expected out of error rate was 95%  
+Initial hypothesis for the expected out of error rate was 5 to 10% was acceptable.   
 
 **Why model choices were made.** 
-Three folds and three repeats instead of 10 were choosen due to the excessively long computing time to build a model. 
+Three folds and three repeats instead of 10 were chosen due to the excessively long computing time to build a model. 
 
 ```{r LoadModel, warning=FALSE, message=FALSE}
 # WARNING: this took me 12 hours to build this model
@@ -72,7 +74,7 @@ if(file.exists("gbmModel.Rda")){load("gbmModel.Rda")} else {
                          tuneGrid = gbmGrid)
 }
 ```
-The model exceeded expectation at 99% accuracy.  
+The model exceeded expectations at 99% accuracy. All twenty test questions were predicted with 100% accuracy. 
 ```{r Prediction, warning=FALSE, message=FALSE}
 # Out of sample prediction
 testPred <- predict(gbmFit2,testing)
