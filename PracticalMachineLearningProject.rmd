@@ -1,0 +1,81 @@
+---
+output: pdf_document
+---
+**A General Boosting Regression Model (GMB) to Predict a Weightlifting Exercise**   
+  
+**By: Wahsabii Neanderthal**  
+
+**Purpose.** To predict the manner in which subjects did a barbell curl exercise.  
+  
+**Data.**  
+The data used were from six subjects who participated in a dumbbell lifting exercise. The subjects used the dumbbell five different ways. The five ways, as described in the study, were "exactly according to the specification (Class A), throwing the elbows to the front (Class B), lifting the dumbbell only halfway (Class C), lowering the dumbbell only halfway (Class D) and throwing the hips to the front (Class E). Class A corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes. The classe variable is the response variable to predict. 
+
+```{r Data, warning=FALSE, message=FALSE}
+# load library used to model data
+library(caret)
+
+# Read data file into memory
+filename <- "pml-training.csv"  # Assumes user has preloaded data in working directory
+pmlData <- read.csv(filename, header=TRUE, na.strings=c("NA","#DIV/0!",""))
+pmlData <- pmlData[,complete.cases(t(pmlData))] # eliminate incomplete columns 
+pmlData <- pmlData[-c(1:7)] # remove the first seven admin columns 
+
+# Show the structure of the data
+str(pmlData)
+```
+To create the model, the data was partitioned in two segments with approximately 60% of the data used to tune the model and the remaining 40% used to validate the model.
+```{r BuildModel, warning=FALSE, message=FALSE}
+# Partition the data 
+set.seed(8675309)
+inTrain <- createDataPartition(y=pmlData$classe, p=0.60, list=FALSE)
+training <- pmlData[inTrain,]
+testing <-  pmlData[-inTrain,]
+c(dim(training), dim(testing))
+```
+A denisty plot of the classe data factors are as follows:  
+```{r DensityPlot, warning=FALSE, message=FALSE}
+# Density plot of the classe factor variable
+qplot(classe, colour=classe, data=training, geom="density")
+```
+
+**How the model was built.**   
+The Generalized Boosting Regression (gmb) Model Package in r's caret package was used to model the various sensor readings recorded in pmlData above.  The classe varirable is the resonse variable and all the other sensor data were explanatory variables.   
+  
+**How cross validation was used.**  
+Repeated cross validation was used to model pmlData. Three folds and three repeats were used to model the training data.   
+
+**Expected out of sample error estimate.**  
+Expected out of error rate was 95%  
+
+**Why model choices were made.** 
+Three folds and three repeats instead of 10 were choosen due to the excessively long computing time to build a model. 
+
+```{r LoadModel, warning=FALSE, message=FALSE}
+# WARNING: this took me 12 hours to build this model
+# if the gbmFit2 model exist load else build it
+if(file.exists("gbmModel.Rda")){load("gbmModel.Rda")} else {
+          
+        fitControl <- trainControl(## 3-fold CV
+                method = "repeatedcv",
+                number = 3, 
+                repeats = 3)
+        
+        gbmGrid <-  expand.grid(interaction.depth = c(1, 5, 9),
+                                n.trees = (1:30)*50,
+                                shrinkage = 0.1,
+                                n.minobsinnode = 20)
+        set.seed(8675309)
+        gbmFit2 <- train(classe ~ ., data = training,
+                         method = "gbm",
+                         trControl = fitControl,
+                         verbose = FALSE,
+                         tuneGrid = gbmGrid)
+}
+```
+The model exceeded expectation at 99% accuracy.  
+```{r Prediction, warning=FALSE, message=FALSE}
+# Out of sample prediction
+testPred <- predict(gbmFit2,testing)
+# Accuracy
+confusionMatrix(testPred,testing$classe)
+```
